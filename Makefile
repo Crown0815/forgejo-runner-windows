@@ -1,5 +1,5 @@
 DIST := dist
-EXECUTABLE := act_runner
+EXECUTABLE := forgejo-runner
 GOFMT ?= gofumpt -l
 DIST := dist
 DIST_DIRS := $(DIST)/binaries $(DIST)/release
