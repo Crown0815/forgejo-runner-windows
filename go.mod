@@ -77,4 +77,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/nektos/act => codeberg.org/forgejo/act v1.0.0
+replace github.com/nektos/act => codeberg.org/forgejo/act v1.0.1
