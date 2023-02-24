@@ -67,7 +67,7 @@ all: build
 
 fmt:
 	@hash gofumpt > /dev/null 2>&1; if [ $$? -ne 0 ]; then \
-		$(GO) install -u mvdan.cc/gofumpt; \
+		$(GO) install mvdan.cc/gofumpt@latest; \
 	fi
 	$(GOFMT) -w $(GOFILES)
 
@@ -77,7 +77,7 @@ vet:
 .PHONY: fmt-check
 fmt-check:
 	@hash gofumpt > /dev/null 2>&1; if [ $$? -ne 0 ]; then \
-		$(GO) install -u mvdan.cc/gofumpt; \
+		$(GO) install mvdan.cc/gofumpt@latest; \
 	fi
 	@diff=$$($(GOFMT) -d $(GOFILES)); \
 	if [ -n "$$diff" ]; then \
