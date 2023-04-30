@@ -1,5 +1,5 @@
 DIST := dist
-EXECUTABLE := act_runner
+EXECUTABLE := forgejo-runner
 GOFMT ?= gofumpt -l
 DIST := dist
 DIST_DIRS := $(DIST)/binaries $(DIST)/release
@@ -20,11 +20,7 @@ DOCKER_IMAGE ?= gitea/act_runner
 DOCKER_TAG ?= nightly
 DOCKER_REF := $(DOCKER_IMAGE):$(DOCKER_TAG)
 
-ifneq ($(shell uname), Darwin)
-	EXTLDFLAGS = -extldflags "-static" $(null)
-else
-	EXTLDFLAGS =
-endif
+EXTLDFLAGS = -extldflags "-static" $(null)
 
 ifeq ($(HAS_GO), GO)
 	GOPATH ?= $(shell $(GO) env GOPATH)
@@ -116,7 +112,7 @@ install: $(GOFILES)
 build: go-check $(EXECUTABLE)
 
 $(EXECUTABLE): $(GOFILES)
-	$(GO) build -v -tags '$(TAGS)' -ldflags '$(EXTLDFLAGS)-s -w $(LDFLAGS)' -o $@
+	$(GO) build -v -tags 'netgo osusergo $(TAGS)' -ldflags '$(EXTLDFLAGS)-s -w $(LDFLAGS)' -o $@
 
 .PHONY: deps-backend
 deps-backend:
