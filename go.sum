@@ -1,9 +1,9 @@
+code.forgejo.org/forgejo/act v1.6.0 h1:RBJFRsmxNzfj0dKQb2aplu3NjtfI8TLdGsGqxmx9lcQ=
+code.forgejo.org/forgejo/act v1.6.0/go.mod h1:1ffiGQZAZCLuk9QEBDdbRuQj1GL4uAQk6GNNtcEnPmI=
 code.gitea.io/actions-proto-go v0.2.1 h1:ToMN/8thz2q10TuCq8dL2d8mI+/pWpJcHCvG+TELwa0=
 code.gitea.io/actions-proto-go v0.2.1/go.mod h1:00ys5QDo1iHN1tHNvvddAcy2W/g+425hQya1cCSvq9A=
 code.gitea.io/gitea-vet v0.2.3-0.20230113022436-2b1561217fa5 h1:daBEK2GQeqGikJESctP5Cu1i33z5ztAD4kyQWiw185M=
 code.gitea.io/gitea-vet v0.2.3-0.20230113022436-2b1561217fa5/go.mod h1:zcNbT/aJEmivCAhfmkHOlT645KNOf9W2KnkLgFjGGfE=
-gitea.com/gitea/act v0.245.2-0.20230516060355-9283cfc9b166 h1:hvyzFmxDmdSZBd8S2+r8VqPSK9eihTD2SrTBAvwgYsA=
-gitea.com/gitea/act v0.245.2-0.20230516060355-9283cfc9b166/go.mod h1:1ffiGQZAZCLuk9QEBDdbRuQj1GL4uAQk6GNNtcEnPmI=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 h1:w+iIsaOQNcT7OZ575w+acHgRric5iCyQh+xv+KJ4HB8=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78/go.mod h1:LmzpDX56iTiv29bbRTIsUNlaFfuhWRQBWjQdVyAevI8=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
