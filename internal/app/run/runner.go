@@ -48,6 +48,13 @@ func NewRunner(cfg *config.Config, reg *config.Registration, cli client.Client) 
 			ls = append(ls, l)
 		}
 	}
+
+	if cfg.Runner.Envs == nil {
+		cfg.Runner.Envs = make(map[string]string, 10)
+	}
+
+	cfg.Runner.Envs["GITHUB_SERVER_URL"] = reg.Address
+
 	envs := make(map[string]string, len(cfg.Runner.Envs))
 	for k, v := range cfg.Runner.Envs {
 		envs[k] = v
