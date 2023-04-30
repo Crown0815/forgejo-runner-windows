@@ -1,4 +1,6 @@
-act_runner
+*~
+
+forgejo-runner
 .env
 .runner
 coverage.txt
