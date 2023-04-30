@@ -1,0 +1,133 @@
+name: Build release
+
+on: 
+  push:
+    tags: 'v*'
+
+jobs:
+  release:
+    runs-on: self-hosted
+    # root is used for testing, allow it
+    if: github.repository_owner == 'forgejo-integration' || github.repository_owner == 'root'
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: verbose
+        run: |
+          # if there are no secrets, be verbose
+          if test -z "${{ secrets.TOKEN }}"; then
+            value=true
+          else
+            value=false
+          fi
+          echo "value=$value" >> "$GITHUB_OUTPUT"
+          echo "shell=set -x" >> "$GITHUB_OUTPUT"
+          
+      - id: registry
+        run: |
+          ${{ steps.verbose.outputs.shell }}
+          url="${{ env.GITHUB_SERVER_URL }}"
+          hostport=${url##http*://}
+          hostport=${hostport%%/}
+          echo "host-port=${hostport}" >> "$GITHUB_OUTPUT"
+          if ! [[ $url =~ ^http:// ]] ; then
+             exit 0
+          fi
+          cat >> "$GITHUB_OUTPUT" <<EOF
+          insecure=true
+          buildx-config<<ENDVAR
+          [registry."${hostport}"]
+            http = true
+          ENDVAR
+          EOF
+        
+      - id: secrets
+        run: |
+          token="${{ secrets.TOKEN }}"
+          doer="${{ secrets.DOER }}"
+          if test -z "$token"; then
+             apt-get -qq install -y jq
+             doer=root
+             api=http://$doer:admin1234@${{ steps.registry.outputs.host-port }}/api/v1/users/$doer/tokens
+             curl -sS -X DELETE $api/release
+             token=$(curl -sS -X POST -H 'Content-Type: application/json' --data-raw '{"name": "release", "scopes": ["all"]}' $api | jq --raw-output .sha1)
+          fi
+          echo "token=${token}" >> "$GITHUB_OUTPUT"
+          echo "doer=${doer}" >> "$GITHUB_OUTPUT"
+
+      - name: allow docker pull/push to forgejo
+        if: ${{ steps.registry.outputs.insecure }}
+        run: |-
+          mkdir /etc/docker
+          cat > /etc/docker/daemon.json <<EOF
+            {
+              "insecure-registries" : ["${{ steps.registry.outputs.host-port }}"],
+              "bip": "172.26.0.1/16"
+            }
+          EOF
+
+      - run: |
+          echo deb http://deb.debian.org/debian bullseye-backports main | tee /etc/apt/sources.list.d/backports.list && apt-get -qq update
+          DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -qq -y -t bullseye-backports docker.io
+          
+      - uses: https://github.com/docker/setup-buildx-action@v2
+        with:
+          config-inline: |
+           ${{ steps.registry.outputs.buildx-config }}
+
+      - run: |
+          token="${{ steps.secrets.outputs.token }}" ; test -z "$token" && token="${{ secrets.TOKEN }}"
+          doer="${{ steps.secrets.outputs.doer }}" ; test -z "$doer" && doer="${{ secrets.DOER }}"
+          BASE64_AUTH=`echo -n "$doer:$token" | base64`
+          mkdir -p ~/.docker
+          echo "{\"auths\": {\"$CI_REGISTRY\": {\"auth\": \"$BASE64_AUTH\"}}}" > ~/.docker/config.json
+        env:
+          CI_REGISTRY: "${{ env.GITHUB_SERVER_URL }}${{ env.GITHUB_REPOSITORY_OWNER }}"
+
+      - id: build
+        run: |
+          ${{ steps.verbose.outputs.shell }}
+          tag="${{ github.ref_name }}"
+          tag=${tag##*v}
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "image=${{ steps.registry.outputs.host-port }}/${{ github.repository }}:${tag}" >> "$GITHUB_OUTPUT"
+          
+      - uses: https://github.com/docker/build-push-action@v4
+        # workaround until https://github.com/docker/build-push-action/commit/d8823bfaed2a82c6f5d4799a2f8e86173c461aba is in @v4 or @v5 is released
+        env:
+          ACTIONS_RUNTIME_TOKEN: ''
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.build.outputs.image }}
+
+      - run: |
+          ${{ steps.verbose.outputs.shell }}
+          mkdir -p release
+          for arch in amd64 arm64; do
+            docker create --platform linux/$arch --name runner ${{ steps.build.outputs.image }}
+            docker cp runner:/bin/forgejo-runner release/forgejo-runner-$arch
+            shasum -a 256 < release/forgejo-runner-$arch | cut -f1 -d ' ' > release/forgejo-runner-$arch.sha256
+            docker rm runner
+          done
+
+      - name: publish release (when TOKEN secret is NOT set)
+        if: ${{ secrets.TOKEN == '' }}
+        uses: https://code.forgejo.org/actions/forgejo-release@v1
+        with:
+          direction: upload
+          release-dir: release
+          release-notes: "RELEASE-NOTES#${{ steps.build.outputs.tag }}"
+          token: ${{ steps.secrets.outputs.token }}
+          verbose: ${{ steps.verbose.outputs.value }}
+
+      - name: publish release (when TOKEN secret is set)
+        if: ${{ secrets.TOKEN != '' }}
+        uses: https://code.forgejo.org/actions/forgejo-release@v1
+        with:
+          direction: upload
+          release-dir: release
+          release-notes: "RELEASE-NOTES#${{ steps.build.outputs.tag }}"
+          token: ${{ secrets.TOKEN }}
+          verbose: ${{ steps.verbose.outputs.value }}

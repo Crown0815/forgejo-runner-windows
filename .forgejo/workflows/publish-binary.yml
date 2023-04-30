@@ -1,0 +1,40 @@
+name: Publish release
+
+on: 
+  push:
+    tags: 'v*'
+
+jobs:
+  release:
+    runs-on: self-hosted
+    if: github.repository_owner == 'forgejo-release' && secrets.TOKEN != ''
+    steps:
+
+      - name: install the certificate authority
+        run: |
+          apt-get install -qq -y wget
+          wget --no-check-certificate -O /usr/local/share/ca-certificates/enough.crt https://forgejo.octopuce.forgejo.org/forgejo/enough/raw/branch/main/certs/2023-05-13/ca.crt
+          update-ca-certificates --fresh
+
+      - uses: actions/checkout@v3
+
+      - name: download release
+        uses: https://code.forgejo.org/actions/forgejo-release@v1
+        with:
+          url: https://code.forgejo.org
+          repo: forgejo-integration/runner
+          direction: download
+          release-dir: release
+          download-retry: 60
+          token: ${{ secrets.TOKEN }}
+
+      - name: upload release
+        uses: https://code.forgejo.org/actions/forgejo-release@v1
+        with:
+          url: https://code.forgejo.org
+          repo: forgejo/runner
+          direction: upload
+          release-dir: release
+          release-notes: "RELEASE-NOTES"
+          token: ${{ secrets.TOKEN }}
+          gpg-private-key: ${{ secrets.GPG }}
