@@ -1,0 +1,58 @@
+name: Integration tests for the release process
+
+on: 
+  push:
+    paths:
+      - go.mod
+      - .forgejo/workflows/release.yml
+      - .forgejo/workflows/integration.yml
+
+jobs:
+  release-simulation:
+    runs-on: self-hosted
+    if: github.repository_owner != 'forgejo-integration' && github.repository_owner != 'forgejo-experimental' && github.repository_owner != 'forgejo-release'
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: forgejo
+        uses: https://code.forgejo.org/actions/setup-forgejo@v1
+        with:
+          user: root
+          password: admin1234
+          image-version: 1.19
+          lxc-ip-prefix: 10.0.9
+
+      - name: publish the runner release
+        run: |
+          set -x
+
+          dir=$(mktemp -d)
+          trap "rm -fr $dir" EXIT
+
+          url=http://root:admin1234@${{ steps.forgejo.outputs.host-port }}
+          export FORGEJO_RUNNER_LOGS="${{ steps.forgejo.outputs.runner-logs }}"
+
+          #
+          # Create a new project with the runner and the release workflow only
+          #
+          rsync -a --exclude .git ./ $dir/
+          rm $(find $dir/.forgejo/workflows/*.yml | grep -v release.yml)
+          forgejo-test-helper.sh push $dir $url root runner |& tee $dir/pushed
+          eval $(grep '^sha=' < $dir/pushed)
+
+          #
+          # Push a tag to trigger the release workflow and wait for it to complete
+          #
+          forgejo-test-helper.sh api POST $url repos/root/runner/tags ${{ steps.forgejo.outputs.token }} --data-raw '{"tag_name": "v1.2.3", "target": "'$sha'"}'
+          LOOPS=180 forgejo-test-helper.sh wait_success "$url" root/runner $sha
+
+          #
+          # Minimal sanity checks. e2e test is for the setup-forgejo action
+          # and the infrastructure playbook.
+          #
+          curl -L -sS $url/root/runner/releases/download/v1.2.3/forgejo-runner-amd64 > forgejo-runner
+          chmod +x forgejo-runner
+          ./forgejo-runner --version | grep 1.2.3
+          curl -L -sS $url/root/runner/releases/download/v1.2.3/forgejo-runner-amd64.sha256 > forgejo-runner.one
+          shasum -a 256 < forgejo-runner | cut -f1 -d ' ' > forgejo-runner.two
+          diff forgejo-runner.one forgejo-runner.two

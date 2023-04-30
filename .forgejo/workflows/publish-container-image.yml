@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: MIT
+name: copy container images from integration to the destination organization
+
+on: 
+  push:
+    tags: 'v*'
+
+jobs:
+  builder:
+    runs-on: self-hosted
+    if: github.repository_owner == 'forgejo-release' && secrets.TOKEN != ''
+    steps:
+
+    - name: apt-get install docker.io
+      run: |
+        DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -qq -y docker.io
+
+    - name: login code.forgejo.org
+      uses: https://github.com/docker/login-action@v2
+      with:
+          registry: code.forgejo.org
+          username: ${{ secrets.DOER }}
+          password: ${{ secrets.TOKEN }}
+
+    - id: tag
+      run: |
+        tag="${{ github.ref_name }}"
+        tag=${tag##*v}
+        echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+    - uses: https://code.forgejo.org/forgejo/forgejo-container-image@v1
+      env:
+        VERIFY: 'false'
+      with:
+        url: https://code.forgejo.org
+        destination-owner: forgejo
+        owner: forgejo-integration
+        suffixes: ' '
+        project: runner
+        tag: ${{ steps.tag.outputs.tag }}
+        doer: ${{ secrets.DOER }}
+        token: ${{ secrets.TOKEN }}
+        verbose: true

@@ -1,0 +1,24 @@
+name: checks
+on: 
+  - pull_request
+  - push
+
+env:
+  GOPROXY: https://goproxy.io,direct
+
+jobs:
+  lint:
+    name: check and test
+    if: github.repository_owner != 'forgejo-integration' && github.repository_owner != 'forgejo-experimental' && github.repository_owner != 'forgejo-release'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.20
+      - uses: actions/checkout@v3
+      - name: vet checks
+        run: make vet
+      - name: build
+        run: make build
+      - name: test
+        run: make test
