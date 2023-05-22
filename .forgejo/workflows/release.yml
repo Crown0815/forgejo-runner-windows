@@ -106,7 +106,7 @@ jobs:
           for arch in amd64 arm64; do
             docker create --platform linux/$arch --name runner ${{ steps.build.outputs.image }}
             docker cp runner:/bin/forgejo-runner release/forgejo-runner-$arch
-            shasum -a 256 < release/forgejo-runner-$arch > release/forgejo-runner-$arch.sha256
+            shasum -a 256 < release/forgejo-runner-$arch | cut -f1 -d ' ' > release/forgejo-runner-$arch.sha256
             docker rm runner
           done
 

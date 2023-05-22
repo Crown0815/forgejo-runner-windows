@@ -52,4 +52,6 @@ jobs:
           curl -L -sS $url/root/runner/releases/download/v1.2.3/forgejo-runner-amd64 > forgejo-runner
           chmod +x forgejo-runner
           ./forgejo-runner --version | grep 1.2.3
-
+          curl -L -sS $url/root/runner/releases/download/v1.2.3/forgejo-runner-amd64.sha256 > forgejo-runner.one
+          shasum -a 256 < forgejo-runner | cut -f1 -d ' ' > forgejo-runner.two
+          diff forgejo-runner.one forgejo-runner.two
