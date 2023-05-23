@@ -9,6 +9,12 @@ jobs:
     runs-on: self-hosted
     if: github.repository_owner == 'forgejo-release' && secrets.TOKEN != ''
     steps:
+
+      - run: |
+          apt-get install -qq -y wget
+          wget --no-check-certificate -O /usr/local/share/ca-certificates/enough.crt https://forgejo.octopuce.forgejo.org/forgejo/enough/raw/branch/main/certs/2023-05-13/ca.crt
+          update-ca-certificates --fresh
+
       - uses: actions/checkout@v3
 
       - name: download release
