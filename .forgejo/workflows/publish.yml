@@ -1,0 +1,31 @@
+name: Publish release
+
+on: 
+  push:
+    tags: 'v*'
+
+jobs:
+  release:
+    runs-on: self-hosted
+    if: github.repository_owner == 'forgejo-release' && secrets.TOKEN != ''
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: download release
+        uses: https://code.forgejo.org/actions/forgejo-release@v1
+        with:
+          url: https://code.forgejo.org
+          repo: forgejo-integration/runner
+          direction: download
+          release-dir: release
+          token: ${{ secrets.TOKEN }}
+
+      - name: upload release
+        uses: https://code.forgejo.org/actions/forgejo-release@v1
+        with:
+          url: https://code.forgejo.org
+          repo: forgejo/runner
+          direction: upload
+          release-dir: release
+          release-notes: "RELEASE-NOTES#${{ steps.build.outputs.tag }}"
+          token: ${{ secrets.TOKEN }}
