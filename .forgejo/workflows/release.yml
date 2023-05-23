@@ -7,6 +7,8 @@ on:
 jobs:
   release:
     runs-on: self-hosted
+    # root is used for testing, allow it
+    if: github.repository_owner == 'forgejo-integration' || github.repository_owner == 'root'
     steps:
       - uses: actions/checkout@v3
 
