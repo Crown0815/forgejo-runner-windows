@@ -10,6 +10,7 @@ on:
 jobs:
   release-simulation:
     runs-on: self-hosted
+    if: github.repository_owner != 'forgejo-integration' && github.repository_owner != 'forgejo-experimental' && github.repository_owner != 'forgejo-release'
     steps:
       - uses: actions/checkout@v3
 
