@@ -36,3 +36,4 @@ jobs:
           release-dir: release
           release-notes: "RELEASE-NOTES#${{ steps.build.outputs.tag }}"
           token: ${{ secrets.TOKEN }}
+          gpg-private-key: ${{ secrets.GPG }}
