@@ -25,6 +25,7 @@ jobs:
           repo: forgejo-integration/runner
           direction: download
           release-dir: release
+          retry: 60
           token: ${{ secrets.TOKEN }}
 
       - name: upload release
