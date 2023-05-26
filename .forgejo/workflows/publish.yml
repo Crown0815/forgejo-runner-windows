@@ -10,7 +10,8 @@ jobs:
     if: github.repository_owner == 'forgejo-release' && secrets.TOKEN != ''
     steps:
 
-      - run: |
+      - name: install the certificate authority
+        run: |
           apt-get install -qq -y wget
           wget --no-check-certificate -O /usr/local/share/ca-certificates/enough.crt https://forgejo.octopuce.forgejo.org/forgejo/enough/raw/branch/main/certs/2023-05-13/ca.crt
           update-ca-certificates --fresh
