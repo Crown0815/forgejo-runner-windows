@@ -35,6 +35,6 @@ jobs:
           repo: forgejo/runner
           direction: upload
           release-dir: release
-          release-notes: "RELEASE-NOTES#${{ steps.build.outputs.tag }}"
+          release-notes: "RELEASE-NOTES"
           token: ${{ secrets.TOKEN }}
           gpg-private-key: ${{ secrets.GPG }}
