@@ -237,7 +237,7 @@ func printStageHelp(stage registerStage) {
 	case StageOverwriteLocalConfig:
 		log.Infoln("Runner is already registered, overwrite local config? [y/N]")
 	case StageInputInstance:
-		log.Infoln("Enter the Gitea instance URL (for example, https://gitea.com/):")
+		log.Infoln("Enter the Forgejo instance URL (for example, https://next.forgejo.org/):")
 	case StageInputToken:
 		log.Infoln("Enter the runner token:")
 	case StageInputRunnerName:
@@ -315,11 +315,11 @@ func doRegister(cfg *config.Config, inputs *registerInputs) error {
 		}
 		if err != nil {
 			log.WithError(err).
-				Errorln("Cannot ping the Gitea instance server")
+				Errorln("Cannot ping the Forgejo instance server")
 			// TODO: if ping failed, retry or exit
 			time.Sleep(time.Second)
 		} else {
-			log.Debugln("Successfully pinged the Gitea instance server")
+			log.Debugln("Successfully pinged the Forgejo instance server")
 			break
 		}
 	}
