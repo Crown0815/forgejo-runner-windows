@@ -91,10 +91,7 @@ const (
 )
 
 var defaultLabels = []string{
-	"ubuntu-latest:docker://node:16-bullseye",
-	"ubuntu-22.04:docker://node:16-bullseye", // There's no node:16-bookworm yet
-	"ubuntu-20.04:docker://node:16-bullseye",
-	"ubuntu-18.04:docker://node:16-buster",
+	"docker:docker://node:16-bullseye",
 }
 
 type registerInputs struct {

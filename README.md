@@ -97,7 +97,7 @@ The user is `root` with password `admin1234`. The runner is registered with:
 ```
 cd setup-forgejo
 docker exec --user 1000 forgejo forgejo actions generate-runner-token > forgejo-runner-token
-../runner/forgejo-runner register --no-interactive --instance "http://$(cat forgejo-ip):3000/" --name runner --token $(cat forgejo-runner-token) --labels ubuntu-latest:docker://node:16-buster,self-hosted
+../runner/forgejo-runner register --no-interactive --instance "http://$(cat forgejo-ip):3000/" --name runner --token $(cat forgejo-runner-token) --labels docker:docker://node:16-bullseye,self-hosted
 ```
 
 And launched with:
