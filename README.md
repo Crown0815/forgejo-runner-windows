@@ -2,6 +2,12 @@
 
 A daemon that connects to a Forgejo instance and runs jobs for continous integration. The high level [installation instructions](https://forgejo.org/docs/next/admin/actions/) are part of the Forgejo documentation.
 
+# Configuration
+
+Display the usage with `forgejo-runner --help`.
+
+For more information on the configuration file, see the [commented example](internal/pkg/config/config.example.yaml).
+
 # Hacking
 
 The Forgejo runner depends on [a fork of ACT](https://code.forgejo.org/forgejo/act) and is a dependency of the [setup-forgejo action](https://code.forgejo.org/actions/setup-forgejo). Together they provide a development environment with end to end testing. Each repository also has some unit testing that can be used to quickly detect the simplest mistakes such as a failure to compile or static code checking failures (vulnerability, lint, etc.).
