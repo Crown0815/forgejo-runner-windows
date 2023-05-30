@@ -1,119 +1,116 @@
-# act runner
+# Forgejo Runner
 
-Act runner is a runner for Gitea based on [Gitea fork](https://gitea.com/gitea/act) of [act](https://github.com/nektos/act).
+A daemon that connects to a Forgejo instance and runs jobs for continous integration. The high level [installation instructions](https://forgejo.org/docs/next/admin/actions/) are part of the Forgejo documentation.
 
-## Installation
+# Hacking
 
-### Prerequisites
+The Forgejo runner depends on [a fork of ACT](https://code.forgejo.org/forgejo/act) and is a dependency of the [setup-forgejo action](https://code.forgejo.org/actions/setup-forgejo). Together they provide a development environment with end to end testing. Each repository also has some unit testing that can be used to quickly detect the simplest mistakes such as a failure to compile or static code checking failures (vulnerability, lint, etc.).
 
-Docker Engine Community version is required for docker mode. To install Docker CE, follow the official [install instructions](https://docs.docker.com/engine/install/).
+Assuming the modifications to the [Forgejo runner](https://code.forgejo.org/forgejo/runner) are pushed to a fork in a branch named `wip-runner-change`, a pull request will verify it compiles and the binary is sane (running `forgejo-runner --version`). It will not verify that it is able to properly run jobs when connected to a live Forgejo instance.
 
-### Download pre-built binary
+For end to end testing, a branch should be pushed to a fork of the [setup-forgejo action](https://code.forgejo.org/actions/setup-forgejo) with a [modification to the tests](https://code.forgejo.org/actions/setup-forgejo/src/commit/ae7f03683b7b05c7d9c6aaeacaf27843de0366a4/.forgejo/workflows/integration.yml#L10-L19), similar to:
 
-Visit [here](https://dl.gitea.com/act_runner/) and download the right version for your platform.
-
-### Build from source
-
-```bash
-make build
+```yaml
+#
+# Uncomment the following for a shortcut to debugging the Forgejo runner.
+# It will build the runner from a designated repository and branch instead of
+# downloading it from a canonical release.
+#
+./forgejo-test-helper.sh build_runner https://code.forgejo.org/earl-warren/runner wip-runner-change
 ```
 
-### Build a docker image
+Where https://code.forgejo.org/earl-warren/runner is the URL of the Forgejo runner fork and `wip-runner-change` is the branch where the changes under test were pushed. When they do the `setup-forgejo` branch can be discarded.
 
-```bash
-make docker
+The runner can be released by merging the `wip-runner-change` branch and by pushing a new tag, for instance `v10.2.3`. Once published, the `setup-forgejo` action can be updated to default to this latest version knowing it already passed integration tests.
+
+## ACT
+
+Assuming the modifications to [ACT](https://code.forgejo.org/forgejo/act) are pushed to a fork in a branch named `wip-act-change`, a pull request will verify it compiles. It will not verify that the Forgejo runner can compile with it.
+
+For verifying it is compatible with the Forgejo runner, a branch should be pushed to a fork of the [Forgejo runner](https://code.forgejo.org/forgejo/runner) (for instance `wip-runner-change`) that uses the ACT version under test in the `wip-act-change` by modifying `go.mod` to contain something like the following and running `go mod tidy`:
+
+```
+replace github.com/nektos/act => code.forgejo.org/earl-warren/act wip-act-change
 ```
 
-## Quickstart
+Where https://code.forgejo.org/earl-warren/act is the URL of the act fork and `wip-act-change` is the branch where the changes under test were pushed. It will not verify that it is able to properly run jobs when connected to a live Forgejo instance. The `wip-runner-change` branch must, in turn, be tested as explained above. When the Forgejo runner modified to include the changes in the `wip-act-change` branch pass the end to end test of the `setup-forgejo` action, it is ready to be released.
 
-### Register
+ACT can be released by merging the `wip-act-change` branch and by pushing a new tag, for instance `v48.8.20`. Once published, the Forgejo runner can be updated to default to this latest version knowing it already passed end to end tests with something like:
 
-```bash
-./act_runner register
+```
+replace github.com/nektos/act => code.forgejo.org/forgejo/act v48.8.20
 ```
 
-And you will be asked to input:
+## Local debug
 
-1. Gitea instance URL, like `http://192.168.8.8:3000/`. You should use your gitea instance ROOT_URL as the instance argument
- and you should not use `localhost` or `127.0.0.1` as instance IP;
-2. Runner token, you can get it from `http://192.168.8.8:3000/admin/runners`;
-3. Runner name, you can just leave it blank;
-4. Runner labels, you can just leave it blank.
+The repositories are checked out in the same directory:
 
-The process looks like:
+- **runner**: [Forgejo runner](https://code.forgejo.org/forgejo/runner)
+- **act**: [ACT](https://code.forgejo.org/forgejo/act)
+- **setup-forgejo**: [setup-forgejo](https://code.forgejo.org/actions/setup-forgejo)
 
-```text
-INFO Registering runner, arch=amd64, os=darwin, version=0.1.5.
-WARN Runner in user-mode.
-INFO Enter the Gitea instance URL (for example, https://gitea.com/):
-http://192.168.8.8:3000/
-INFO Enter the runner token:
-fe884e8027dc292970d4e0303fe82b14xxxxxxxx
-INFO Enter the runner name (if set empty, use hostname: Test.local):
+### Install dependencies
 
-INFO Enter the runner labels, leave blank to use the default labels (comma-separated, for example, ubuntu-20.04:docker://node:16-bullseye,ubuntu-18.04:docker://node:16-buster,linux_arm:host):
+The dependencies are installed manually or with:
 
-INFO Registering runner, name=Test.local, instance=http://192.168.8.8:3000/, labels=[ubuntu-latest:docker://node:16-bullseye ubuntu-22.04:docker://node:16-bullseye ubuntu-20.04:docker://node:16-bullseye ubuntu-18.04:docker://node:16-buster].
-DEBU Successfully pinged the Gitea instance server
-INFO Runner registered successfully.
+```shell
+setup-forgejo/forgejo-dependencies.sh
 ```
 
-You can also register with command line arguments.
+### Build the Forgejo runner with the local ACT
 
-```bash
-./act_runner register --instance http://192.168.8.8:3000 --token <my_runner_token> --no-interactive
+The Forgejo runner is rebuilt with the ACT directory by changing the `runner/go.mod` file to:
+
+```
+replace github.com/nektos/act => ../act
 ```
 
-If the registry succeed, it will run immediately. Next time, you could run the runner directly.
+Running:
 
-### Run
-
-```bash
-./act_runner daemon
+```
+cd runner ; go mod tidy
 ```
 
-### Configuration
+Building:
 
-You can also configure the runner with a configuration file.
-The configuration file is a YAML file, you can generate a sample configuration file with `./act_runner generate-config`.
-
-```bash
-./act_runner generate-config > config.yaml
+```shell
+cd runner ; rm -f forgejo-runner ; make forgejo-runner
 ```
 
-You can specify the configuration file path with `-c`/`--config` argument.
+### Run Forgejo and the runner
 
-```bash
-./act_runner -c config.yaml register # register with config file
-./act_runner -c config.yaml daemon # run with config file
+A Forgejo instance is launched with:
+
+```shell
+cd setup-forgejo ; ./forgejo.sh setup
+firefox http://$(cat forgejo-ip):3000
 ```
 
-### Run a docker container
+The user is `root` with password `admin1234`. The runner is registered with:
 
-```sh
-docker run -e GITEA_INSTANCE_URL=http://192.168.8.18:3000 -e GITEA_RUNNER_REGISTRATION_TOKEN=<runner_token> -v /var/run/docker.sock:/var/run/docker.sock -v $PWD/data:/data --name my_runner gitea/act_runner:nightly
+```
+cd setup-forgejo
+docker exec --user 1000 forgejo forgejo actions generate-runner-token > forgejo-runner-token
+../runner/forgejo-runner register --no-interactive --instance "http://$(cat forgejo-ip):3000/" --name runner --token $(cat forgejo-runner-token) --labels ubuntu-latest:docker://node:16-buster,self-hosted
 ```
 
-The `/data` directory inside the docker container contains the runner API keys after registration.
-It must be persisted, otherwise the runner would try to register again, using the same, now defunct registration token.
+And launched in debug mode with:
 
-### Running in docker-compose
+```shell
+cd setup-forgejo ; ACTIONS_STEP_DEBUG=true ../runner/forgejo-runner daemon
+```
 
-```yml
-...
-  gitea:
-    image: gitea/gitea
-    ...
+### Try a sample workflow
 
-  runner:
-    image: gitea/act_runner
-    restart: always
-    depends_on:
-      - gitea
-    volumes:
-      - ./data/act_runner:/data
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - GITEA_INSTANCE_URL=<instance url>
-      - GITEA_RUNNER_REGISTRATION_TOKEN=<registration token>
+From the Forgejo web interface, create a repository and add the following to `.forgejo/workflows/try.yaml`. It will launch the job and the result can be observed from the `actions` tab.
+
+```yaml
+on: [push]
+jobs:
+  ls:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          ls ${{ github.workspace }}
 ```
