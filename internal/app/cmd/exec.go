@@ -384,7 +384,7 @@ func runExec(ctx context.Context, execArgs *executeArgs) func(cmd *cobra.Command
 			NoSkipCheckout:     execArgs.noSkipCheckout,
 			// PresetGitHubContext:   preset,
 			// EventJSON:             string(eventJSON),
-			ContainerNamePrefix:   fmt.Sprintf("GITEA-ACTIONS-TASK-%s", eventName),
+			ContainerNamePrefix:   fmt.Sprintf("FORGEJO-ACTIONS-TASK-%s", eventName),
 			ContainerMaxLifetime:  maxLifetime,
 			ContainerNetworkMode:  container.NetworkMode(execArgs.network),
 			DefaultActionInstance: execArgs.defaultActionsUrl,
@@ -404,7 +404,7 @@ func runExec(ctx context.Context, execArgs *executeArgs) func(cmd *cobra.Command
 		}
 
 		if len(execArgs.artifactServerPath) == 0 {
-			tempDir, err := os.MkdirTemp("", "gitea-act-")
+			tempDir, err := os.MkdirTemp("", "forgejo-act-")
 			if err != nil {
 				fmt.Println(err)
 			}
