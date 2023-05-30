@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - go.mod
+      - Dockerfile
       - .forgejo/workflows/release.yml
       - .forgejo/workflows/integration.yml
 
