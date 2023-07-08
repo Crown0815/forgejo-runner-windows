@@ -21,12 +21,12 @@ if [[ ! -s .runner ]]; then
   try=$((try + 1))
   success=0
 
-  # The point of this loop is to make it simple, when running both act_runner and gitea in docker,
-  # for the act_runner to wait a moment for gitea to become available before erroring out.  Within
+  # The point of this loop is to make it simple, when running both forgejo-runner and gitea in docker,
+  # for the forgejo-runner to wait a moment for gitea to become available before erroring out.  Within
   # the context of a single docker-compose, something similar could be done via healthchecks, but
   # this is more flexible.
   while [[ $success -eq 0 ]] && [[ $try -lt ${GITEA_MAX_REG_ATTEMPTS:-10} ]]; do
-    act_runner register \
+    forgejo-runner register \
       --instance "${GITEA_INSTANCE_URL}" \
       --token    "${GITEA_RUNNER_REGISTRATION_TOKEN}" \
       --name     "${GITEA_RUNNER_NAME:-`hostname`}" \
@@ -42,7 +42,7 @@ if [[ ! -s .runner ]]; then
     fi
   done
 fi
-# Prevent reading the token from the act_runner process
+# Prevent reading the token from the forgejo-runner process
 unset GITEA_RUNNER_REGISTRATION_TOKEN
 
-act_runner daemon ${CONFIG_ARG}
+forgejo-runner daemon ${CONFIG_ARG}
