@@ -4,21 +4,52 @@ on:
   - push
 
 env:
+  FORGEJO_HOST_PORT: 'forgejo:3000'
+  FORGEJO_ADMIN_USER: 'root'
+  FORGEJO_ADMIN_PASSWORD: 'admin1234'
+  FORGEJO_RUNNER_SECRET: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+  FORGEJO_SCRIPT: |
+    /bin/s6-svscan /etc/s6 & sleep 10 ; su -c "forgejo admin user create --admin --username $FORGEJO_ADMIN_USER --password $FORGEJO_ADMIN_PASSWORD --email root@example.com" git && su -c "forgejo forgejo-cli actions register --labels docker --name therunner --secret $FORGEJO_RUNNER_SECRET" git && sleep infinity  
   GOPROXY: https://goproxy.io,direct
 
 jobs:
-  lint:
+  tests:
     name: check and test
     if: github.repository_owner != 'forgejo-integration' && github.repository_owner != 'forgejo-experimental' && github.repository_owner != 'forgejo-release'
-    runs-on: ubuntu-latest
+    runs-on: docker
+
+    services:
+      forgejo:
+        image: codeberg.org/forgejo-integration/forgejo:1.20.0-4-rc2
+        env:
+          FORGEJO__security__INSTALL_LOCK: "true"
+          FORGEJO__log__LEVEL: "debug"
+          FORGEJO__actions__ENABLED: "true"
+          FORGEJO_ADMIN_USER: ${{ env.FORGEJO_ADMIN_USER }}
+          FORGEJO_ADMIN_PASSWORD: ${{ env.FORGEJO_ADMIN_PASSWORD }}
+          FORGEJO_RUNNER_SECRET: ${{ env.FORGEJO_RUNNER_SECRET }}
+        cmd:
+          - 'bash'
+          - '-c'
+          - ${{ env.FORGEJO_SCRIPT }}
+
     steps:
       - uses: actions/setup-go@v3
         with:
-          go-version: 1.20
+          # pin because of https://github.com/nektos/act/issues/1908
+          go-version: 1.20.5
+
       - uses: actions/checkout@v3
-      - name: vet checks
-        run: make vet
-      - name: build
-        run: make build
-      - name: test
-        run: make test
+
+      - run: make vet
+
+      - run: make build
+
+      - name: check the forgejo server is responding
+        run: |
+          set -x
+          apt-get update -qq
+          apt-get install -y -qq jq curl
+          test $FORGEJO_ADMIN_USER = $(curl -sS http://$FORGEJO_ADMIN_USER:$FORGEJO_ADMIN_PASSWORD@$FORGEJO_HOST_PORT/api/v1/user | jq --raw-output .login)
+
+      - run: make FORGEJO_URL=http://$FORGEJO_HOST_PORT test

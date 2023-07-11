@@ -101,7 +101,7 @@ func runDaemon(ctx context.Context, configFile *string) func(cmd *cobra.Command,
 		resp, err := runner.Declare(ctx, ls.Names())
 		if err != nil && connect.CodeOf(err) == connect.CodeUnimplemented {
 			// Gitea instance is older version. skip declare step.
-			log.Warn("Because the Gitea instance is an old version, skip declare labels and version.")
+			log.Warn("Because the Forgejo instance is an old version, skip declare labels and version.")
 		} else if err != nil {
 			log.WithError(err).Error("fail to invoke Declare")
 			return err
