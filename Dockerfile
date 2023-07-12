@@ -1,5 +1,6 @@
 #Build stage
-FROM golang:1.20-alpine3.18 AS build-env
+# Switch back to 1.20 instead of 1.20.5 when https://github.com/nektos/act/issues/1908 is resolved
+FROM golang:1.20.5-alpine3.18 AS build-env
 
 RUN apk --no-cache add build-base git
 
