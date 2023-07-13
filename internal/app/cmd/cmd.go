@@ -41,6 +41,8 @@ func Execute(ctx context.Context) {
 	registerCmd.Flags().StringVar(&regArgs.Labels, "labels", "", "Runner tags, comma separated")
 	rootCmd.AddCommand(registerCmd)
 
+	rootCmd.AddCommand(createRunnerFileCmd(ctx, &configFile))
+
 	// ./act_runner daemon
 	daemonCmd := &cobra.Command{
 		Use:   "daemon",
