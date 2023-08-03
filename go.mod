@@ -14,10 +14,10 @@ require (
 	github.com/nektos/act v0.0.0
 	github.com/sirupsen/logrus v1.9.2
 	github.com/spf13/cobra v1.7.0
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.3
 	golang.org/x/term v0.8.0
-	golang.org/x/time v0.1.0
-	google.golang.org/protobuf v1.28.1
+	golang.org/x/time v0.3.0
+	google.golang.org/protobuf v1.30.0
 	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools/v3 v3.4.0
 )
@@ -25,14 +25,14 @@ require (
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
-	github.com/Microsoft/go-winio v0.5.2 // indirect
+	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230518184743-7afd39499903 // indirect
 	github.com/acomagu/bufpipe v1.0.4 // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect
-	github.com/containerd/containerd v1.6.20 // indirect
+	github.com/containerd/containerd v1.7.2 // indirect
 	github.com/creack/pty v1.1.18 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/docker/cli v24.0.1+incompatible // indirect
+	github.com/docker/cli v24.0.2+incompatible // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
@@ -53,17 +53,17 @@ require (
 	github.com/julienschmidt/httprouter v1.3.0 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
-	github.com/klauspost/compress v1.15.12 // indirect
+	github.com/klauspost/compress v1.16.3 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/moby/buildkit v0.11.6 // indirect
+	github.com/moby/buildkit v0.12.0 // indirect
 	github.com/moby/patternmatcher v0.5.0 // indirect
 	github.com/moby/sys/sequential v0.5.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/opencontainers/image-spec v1.1.0-rc2.0.20221005185240-3a7f492d3f1b // indirect
-	github.com/opencontainers/runc v1.1.5 // indirect
+	github.com/opencontainers/image-spec v1.1.0-rc3 // indirect
+	github.com/opencontainers/runc v1.1.7 // indirect
 	github.com/opencontainers/selinux v1.11.0 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -82,6 +82,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	go.etcd.io/bbolt v1.3.7 // indirect
 	golang.org/x/crypto v0.9.0 // indirect
+	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
@@ -90,4 +91,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-replace github.com/nektos/act => code.forgejo.org/earl-warren/act v0.0.0-20230712071828-cefe3d8dab38
+replace github.com/nektos/act => code.forgejo.org/gmem/act v1.8.1-0.20230803125938-047ca4fb616c
