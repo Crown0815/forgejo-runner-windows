@@ -1,5 +1,5 @@
 #Build stage
-FROM golang:1.20-alpine3.18 AS build-env
+FROM golang:1.21-alpine3.18 AS build-env
 
 RUN apk --no-cache add build-base git
 
