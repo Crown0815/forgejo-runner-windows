@@ -96,7 +96,7 @@ func Test_runCreateRunnerFile(t *testing.T) {
 	//
 	// Read back the runner file and verify its content
 	//
-	reg, err := config.LoadRegistration(runnerFile)
+	reg, err := config.LoadRegistration(runnerFile, cfg.Runner.Labels)
 	assert.NoError(t, err)
 	assert.EqualValues(t, secret, reg.Token)
 	assert.EqualValues(t, instance, reg.Address)

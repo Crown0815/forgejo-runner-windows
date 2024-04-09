@@ -22,7 +22,7 @@ type Registration struct {
 	Labels  []string `json:"labels"`
 }
 
-func LoadRegistration(file string) (*Registration, error) {
+func LoadRegistration(file string, labels []string) (*Registration, error) {
 	f, err := os.Open(file)
 	if err != nil {
 		return nil, err
@@ -34,6 +34,9 @@ func LoadRegistration(file string) (*Registration, error) {
 		return nil, err
 	}
 
+	if len(labels) > 0 {
+		reg.Labels = labels
+	}
 	reg.Warning = ""
 
 	return &reg, nil

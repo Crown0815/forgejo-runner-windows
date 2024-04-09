@@ -37,7 +37,7 @@ func runDaemon(ctx context.Context, configFile *string) func(cmd *cobra.Command,
 		initLogging(cfg)
 		log.Infoln("Starting runner daemon")
 
-		reg, err := config.LoadRegistration(cfg.Runner.File)
+		reg, err := config.LoadRegistration(cfg.Runner.File, cfg.Runner.Labels)
 		if os.IsNotExist(err) {
 			log.Error("registration file not found, please register the runner first")
 			return err
@@ -48,10 +48,6 @@ func runDaemon(ctx context.Context, configFile *string) func(cmd *cobra.Command,
 		cfg.Tune(reg.Address)
 
 		lbls := reg.Labels
-		if len(cfg.Runner.Labels) > 0 {
-			lbls = cfg.Runner.Labels
-		}
-
 		ls := labels.Labels{}
 		for _, l := range lbls {
 			label, err := labels.Parse(l)
