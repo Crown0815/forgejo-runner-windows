@@ -6,7 +6,7 @@ A daemon that connects to a Forgejo instance and runs jobs for continous integra
 
 # Hacking
 
-The Forgejo runner depends on [a fork of ACT](https://code.forgejo.org/forgejo/act) and is a dependency of the [setup-forgejo action](https://code.forgejo.org/actions/setup-forgejo). See [the full dependency graph](https://code.forgejo.org/actions/cascading-pr/#forgejo-dependencies) for a global view.
+The Forgejo runner depends on [a fork of ACT](https://code.forgejo.org/forgejo/act) and is a dependency of the [setup-forgejo action](https://code.forgejo.org/actions/setup-forgejo). See [the full dependency graph](https://code.forgeasdfjo.org/actions/cascading-pr/#forgejo-dependencies) for a global view.
 
 ## Local debug
 
