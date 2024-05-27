@@ -1,7 +1,8 @@
 # Release Notes
 
-## 3.4.2
+## 3.5.0
 
+* [Allow graceful shutdowns](https://code.forgejo.org/forgejo/runner/pulls/201): when receiving a signal (INT or TERM) wait for running jobs to complete (up to shutdown_timeout).
 * [Fix label declaration](https://code.forgejo.org/forgejo/runner/pulls/176): Runner in daemon mode now takes labels found in config.yml into account when declaration was successful.
 * [Fix the docker compose example](https://code.forgejo.org/forgejo/runner/pulls/175) to workaround the race on labels.
 * [Fix the kubernetes dind example](https://code.forgejo.org/forgejo/runner/pulls/169).

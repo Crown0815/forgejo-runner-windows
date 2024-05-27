@@ -25,40 +25,95 @@ type Poller struct {
 	runner       *run.Runner
 	cfg          *config.Config
 	tasksVersion atomic.Int64 // tasksVersion used to store the version of the last task fetched from the Gitea.
+
+	pollingCtx      context.Context
+	shutdownPolling context.CancelFunc
+
+	jobsCtx      context.Context
+	shutdownJobs context.CancelFunc
+
+	done chan struct{}
 }
 
 func New(cfg *config.Config, client client.Client, runner *run.Runner) *Poller {
+	pollingCtx, shutdownPolling := context.WithCancel(context.Background())
+
+	jobsCtx, shutdownJobs := context.WithCancel(context.Background())
+
+	done := make(chan struct{})
+
 	return &Poller{
 		client: client,
 		runner: runner,
 		cfg:    cfg,
+
+		pollingCtx:      pollingCtx,
+		shutdownPolling: shutdownPolling,
+
+		jobsCtx:      jobsCtx,
+		shutdownJobs: shutdownJobs,
+
+		done: done,
 	}
 }
 
-func (p *Poller) Poll(ctx context.Context) {
+func (p *Poller) Poll() {
 	limiter := rate.NewLimiter(rate.Every(p.cfg.Runner.FetchInterval), 1)
 	wg := &sync.WaitGroup{}
 	for i := 0; i < p.cfg.Runner.Capacity; i++ {
 		wg.Add(1)
-		go p.poll(ctx, wg, limiter)
+		go p.poll(wg, limiter)
 	}
 	wg.Wait()
+
+	// signal that we shutdown
+	close(p.done)
 }
 
-func (p *Poller) poll(ctx context.Context, wg *sync.WaitGroup, limiter *rate.Limiter) {
+func (p *Poller) Shutdown(ctx context.Context) error {
+	p.shutdownPolling()
+
+	select {
+	// graceful shutdown completed succesfully
+	case <-p.done:
+		return nil
+
+	// our timeout for shutting down ran out
+	case <-ctx.Done():
+		// when both the timeout fires and the graceful shutdown
+		// completed succsfully, this branch of the select may
+		// fire. Do a non-blocking check here against the graceful
+		// shutdown status to avoid sending an error if we don't need to.
+		_, ok := <-p.done
+		if !ok {
+			return nil
+		}
+
+		// force a shutdown of all running jobs
+		p.shutdownJobs()
+
+		// wait for running jobs to report their status to Gitea
+		_, _ = <-p.done
+
+		return ctx.Err()
+	}
+}
+
+func (p *Poller) poll(wg *sync.WaitGroup, limiter *rate.Limiter) {
 	defer wg.Done()
 	for {
-		if err := limiter.Wait(ctx); err != nil {
-			if ctx.Err() != nil {
+		if err := limiter.Wait(p.pollingCtx); err != nil {
+			if p.pollingCtx.Err() != nil {
 				log.WithError(err).Debug("limiter wait failed")
 			}
 			return
 		}
-		task, ok := p.fetchTask(ctx)
+		task, ok := p.fetchTask(p.pollingCtx)
 		if !ok {
 			continue
 		}
-		p.runTaskWithRecover(ctx, task)
+
+		p.runTaskWithRecover(p.jobsCtx, task)
 	}
 }
 

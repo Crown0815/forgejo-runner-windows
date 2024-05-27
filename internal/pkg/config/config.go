@@ -21,15 +21,16 @@ type Log struct {
 
 // Runner represents the configuration for the runner.
 type Runner struct {
-	File          string            `yaml:"file"`           // File specifies the file path for the runner.
-	Capacity      int               `yaml:"capacity"`       // Capacity specifies the capacity of the runner.
-	Envs          map[string]string `yaml:"envs"`           // Envs stores environment variables for the runner.
-	EnvFile       string            `yaml:"env_file"`       // EnvFile specifies the path to the file containing environment variables for the runner.
-	Timeout       time.Duration     `yaml:"timeout"`        // Timeout specifies the duration for runner timeout.
-	Insecure      bool              `yaml:"insecure"`       // Insecure indicates whether the runner operates in an insecure mode.
-	FetchTimeout  time.Duration     `yaml:"fetch_timeout"`  // FetchTimeout specifies the timeout duration for fetching resources.
-	FetchInterval time.Duration     `yaml:"fetch_interval"` // FetchInterval specifies the interval duration for fetching resources.
-	Labels        []string          `yaml:"labels"`         // Labels specifies the labels of the runner. Labels are declared on each startup
+	File            string            `yaml:"file"`             // File specifies the file path for the runner.
+	Capacity        int               `yaml:"capacity"`         // Capacity specifies the capacity of the runner.
+	Envs            map[string]string `yaml:"envs"`             // Envs stores environment variables for the runner.
+	EnvFile         string            `yaml:"env_file"`         // EnvFile specifies the path to the file containing environment variables for the runner.
+	Timeout         time.Duration     `yaml:"timeout"`          // Timeout specifies the duration for runner timeout.
+	ShutdownTimeout time.Duration     `yaml:"shutdown_timeout"` // ShutdownTimeout specifies the duration to wait for running jobs to complete during a shutdown of the runner.
+	Insecure        bool              `yaml:"insecure"`         // Insecure indicates whether the runner operates in an insecure mode.
+	FetchTimeout    time.Duration     `yaml:"fetch_timeout"`    // FetchTimeout specifies the timeout duration for fetching resources.
+	FetchInterval   time.Duration     `yaml:"fetch_interval"`   // FetchInterval specifies the interval duration for fetching resources.
+	Labels          []string          `yaml:"labels"`           // Labels specify the labels of the runner. Labels are declared on each startup
 }
 
 // Cache represents the configuration for caching.

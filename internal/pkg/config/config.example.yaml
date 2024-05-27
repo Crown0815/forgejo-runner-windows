@@ -23,7 +23,10 @@ runner:
   # Please note that the Forgejo instance also has a timeout (3h by default) for the job.
   # So the job could be stopped by the Forgejo instance if it's timeout is shorter than this.
   timeout: 3h
-  # Whether skip verifying the TLS certificate of the Forgejo instance.
+  # The timeout for the runner to wait for running jobs to finish when shutting down.
+  # Any running jobs that haven't finished after this timeout will be cancelled.
+  shutdown_timeout: 0s
+  # Whether skip verifying the TLS certificate of the instance.
   insecure: false
   # The timeout for fetching the job from the Forgejo instance.
   fetch_timeout: 5s

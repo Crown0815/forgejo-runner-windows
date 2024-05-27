@@ -45,4 +45,4 @@ fi
 # Prevent reading the token from the forgejo-runner process
 unset GITEA_RUNNER_REGISTRATION_TOKEN
 
-forgejo-runner daemon ${CONFIG_ARG}
+exec forgejo-runner daemon ${CONFIG_ARG}
