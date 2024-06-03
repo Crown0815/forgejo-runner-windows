@@ -121,6 +121,9 @@ func LoadDefault(file string) (*Config, error) {
 	if cfg.Runner.Timeout <= 0 {
 		cfg.Runner.Timeout = 3 * time.Hour
 	}
+	if cfg.Runner.ShutdownTimeout <= 0 {
+		cfg.Runner.ShutdownTimeout = cfg.Runner.Timeout
+	}
 	if cfg.Cache.Enabled == nil {
 		b := true
 		cfg.Cache.Enabled = &b

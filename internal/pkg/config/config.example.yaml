@@ -25,7 +25,8 @@ runner:
   timeout: 3h
   # The timeout for the runner to wait for running jobs to finish when shutting down.
   # Any running jobs that haven't finished after this timeout will be cancelled.
-  shutdown_timeout: 0s
+  # Defaults to the same value as timeout if unset or 0.
+  shutdown_timeout: 3h
   # Whether skip verifying the TLS certificate of the instance.
   insecure: false
   # The timeout for fetching the job from the Forgejo instance.
