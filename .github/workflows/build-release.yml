@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: MIT
+#
+# https://code.forgejo.org/forgejo/runner
+#
+#  Build the runner binaries and OCI images
+#
+#  ROLE: forgejo-integration
+#  DOER: forgejo-ci
+#  TOKEN: <generated from https://code.forgejo.org/forgejo-ci>
+#
+name: Build release
+
+on:
+  workflow_dispatch:
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: |
+          go build -o forgejo-runner.exe
+
+      - name: Upload release
+        uses: actions/upload-artifact@v4
+        with:
+          name: forgejo-runner
+          path: forgejo-runner.exe
