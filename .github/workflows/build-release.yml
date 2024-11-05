@@ -6,38 +6,40 @@ on:
     tags: 'v*'
 jobs:
   build:
-    runs-on: windows-latest
+    name: Build ${{matrix.architecture}}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        architecture: ['386', amd64, arm, arm64]
     steps:
       - uses: actions/checkout@v4
-
-      - name: Build
+      - name: Build for ${{matrix.architecture}}
         run: |
-          go build -o forgejo-runner.exe
+          env GOOS=windows GOARCH=${{matrix.architecture}} \
+          go build -o forgejo-runner-windows-${{matrix.architecture}}.exe
 
-      - name: Upload release
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: forgejo-runner
-          path: forgejo-runner.exe
+          name: forgejo-runner-windows-${{matrix.architecture}}
+          path: forgejo-runner-windows-${{matrix.architecture}}.exe
 
   release:
     runs-on: ubuntu-latest
     needs: build
     if: github.event_name == 'push' && github.ref_type == 'tag'
     steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
-          name: forgejo-runner
           path: .
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          files: forgejo-runner.exe
+          files: forgejo-runner-windows-*/forgejo-runner-windows-*.exe
           draft: false
           prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
           token: ${{ secrets.RELEASE_TOKEN }}
+          fail_on_unmatched_files: true
           body: See [original release notes](https://code.forgejo.org/forgejo/runner/releases/tag/${{ github.ref_name }}).
 
