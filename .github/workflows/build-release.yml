@@ -1,19 +1,11 @@
-# SPDX-License-Identifier: MIT
-#
-# https://code.forgejo.org/forgejo/runner
-#
-#  Build the runner binaries and OCI images
-#
-#  ROLE: forgejo-integration
-#  DOER: forgejo-ci
-#  TOKEN: <generated from https://code.forgejo.org/forgejo-ci>
-#
+
 name: Build release
 
 on:
-  workflow_dispatch:
+  push:
+    tags: 'v*'
 jobs:
-  release:
+  build:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,3 +19,25 @@ jobs:
         with:
           name: forgejo-runner
           path: forgejo-runner.exe
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: forgejo-runner
+          path: .
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: forgejo-runner.exe
+          draft: false
+          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
+          token: ${{ secrets.RELEASE_TOKEN }}
+          body: See [original release notes](https://code.forgejo.org/forgejo/runner/releases/tag/${{ github.ref_name }}).
+
