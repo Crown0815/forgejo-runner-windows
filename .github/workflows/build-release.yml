@@ -1,3 +1,6 @@
+# This workflow will build a Windows binary for each architecture and upload it as an artifact.
+# If the push is a tag, it will create a release with the binaries attached.
+# This build is currently supported on https://github.com/Crown0815/forgejo-runner-windows
 
 name: Build release
 
