@@ -1,8 +1,9 @@
 # Release Notes
 
-## 4.1.0
+## 5.0.0
 
 * [Add job_level logging option to config](https://code.forgejo.org/forgejo/runner/pulls/299) to make the logging level of jobs configurable. Change default from "trace" to "info".
+* [Don't log job output when debug logging is not enabled](https://code.forgejo.org/forgejo/runner/pulls/303). This reduces the default amount of log output of the runner.
 
 ## 4.0.1
 
