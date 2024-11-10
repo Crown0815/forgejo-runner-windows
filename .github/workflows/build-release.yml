@@ -19,7 +19,9 @@ jobs:
       - name: Build for ${{matrix.architecture}}
         run: |
           env GOOS=windows GOARCH=${{matrix.architecture}} \
-          go build -o forgejo-runner-windows-${{matrix.architecture}}.exe
+          go build \
+            -ldflags "-s -w -X gitea.com/gitea/act_runner/internal/pkg/ver.version=${{ github.ref_name }}" \
+            -o forgejo-runner-windows-${{matrix.architecture}}.exe
 
       - uses: actions/upload-artifact@v4
         with:
