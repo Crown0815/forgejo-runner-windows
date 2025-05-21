@@ -1,0 +1,140 @@
+name: Windows Tests
+
+# This workflow runs tests on Windows with a Forgejo server running on Linux.
+# It uses Windows Subsystem for Linux (WSL) to run the Forgejo server in a Docker container
+# within the Windows runner, allowing network connectivity between the two.
+#
+# The workflow:
+# 1. Sets up WSL with Ubuntu 22.04
+# 2. Installs Docker in WSL
+# 3. Starts a Forgejo server in a Docker container within WSL
+# 4. Creates an admin user and generates a runner token
+# 5. Passes the runner token to the Windows environment
+# 6. Waits for the Forgejo server to be accessible from Windows
+# 7. Sets up the Forgejo connection and registers the runner
+# 8. Runs the tests on Windows
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run Tests on Windows with Linux Forgejo Server
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Setup WSL
+        uses: Vampire/setup-wsl@v5
+
+      - name: Start Forgejo Server in WSL
+        shell: wsl-bash {0}
+        run: |
+          # Install Docker in WSL
+          apt-get update
+          apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+          add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+          apt-get update
+          apt-get install -y docker.io
+          service docker start
+
+          # Start Forgejo container
+          docker run -d --name forgejo \
+            -p 3000:3000 \
+            -e USER_UID=1000 \
+            -e USER_GID=1000 \
+            -e FORGEJO__security__INSTALL_LOCK=true \
+            -e FORGEJO__server__DOMAIN=localhost \
+            -e FORGEJO__server__ROOT_URL=http://localhost:3000/ \
+            codeberg/forgejo:latest
+
+          # Wait for Forgejo to be ready
+          echo "Waiting for Forgejo to be ready..."
+          for i in {1..30}; do
+            if curl -s http://localhost:3000/api/v1/version > /dev/null; then
+              echo "Forgejo is ready!"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 5
+          done
+
+          # Create admin user and generate runner token
+          docker exec forgejo forgejo admin create-user --username test-admin --password test-password --email test@example.com --admin
+          TOKEN=$(docker exec forgejo forgejo actions generate-runner-token)
+          echo "RUNNER_TOKEN=$TOKEN" > /tmp/runner_token.txt
+
+      - name: Get Runner Token
+        shell: wsl-bash {0}
+        run: |
+          TOKEN=$(cat /tmp/runner_token.txt)
+          echo "RUNNER_TOKEN=$TOKEN" >> $GITHUB_ENV
+
+      - name: Wait for Forgejo to be accessible from Windows
+        run: |
+          $retries = 0
+          $maxRetries = 30
+          do {
+            try {
+              $response = Invoke-WebRequest -Uri "http://localhost:3000/api/v1/version" -UseBasicParsing
+              if ($response.StatusCode -eq 200) {
+                Write-Host "Forgejo is accessible from Windows!"
+                break
+              }
+            } catch {
+              Write-Host "Waiting for Forgejo to be accessible from Windows... (Attempt $retries/$maxRetries)"
+            }
+            $retries++
+            Start-Sleep -Seconds 5
+          } while ($retries -lt $maxRetries)
+
+          if ($retries -ge $maxRetries) {
+            Write-Error "Forgejo did not become accessible in time"
+            exit 1
+          }
+
+      - name: Setup Forgejo connection
+        run: |
+          # Set environment variables
+          $env:FORGEJO_URL = "http://localhost:3000"
+          $env:FORGEJO_RUNNER_SECRET = "${{ env.RUNNER_TOKEN }}"
+
+          # Create a temporary config file
+          $configContent = @"
+          log:
+            level: debug
+          runner:
+            file: .runner
+            capacity: 1
+            timeout: 3h
+            labels:
+              - windows:host
+              - docker:docker://node:20
+          server:
+            url: $env:FORGEJO_URL
+            token: $env:FORGEJO_RUNNER_SECRET
+          "@
+          Set-Content -Path config.yml -Value $configContent
+
+          # Register the runner
+          go run main.go create-runner-file --config config.yml --instance $env:FORGEJO_URL --secret $env:FORGEJO_RUNNER_SECRET --name "windows-test-runner"
+
+      - name: Run tests
+        run: go test -v ./...
+        env:
+          FORGEJO_URL: http://localhost:3000
+          FORGEJO_RUNNER_SECRET: ${{ env.RUNNER_TOKEN }}
