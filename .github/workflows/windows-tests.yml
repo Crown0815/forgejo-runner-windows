@@ -52,7 +52,7 @@ jobs:
             -e FORGEJO__security__INSTALL_LOCK=true \
             -e FORGEJO__server__DOMAIN=localhost \
             -e FORGEJO__server__ROOT_URL=http://localhost:3000/ \
-            codeberg/forgejo:latest
+            codeberg.org/forgejo/forgejo:latest
 
           # Wait for Forgejo to be ready
           echo "Waiting for Forgejo to be ready..."
