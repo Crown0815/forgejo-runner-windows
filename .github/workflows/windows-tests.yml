@@ -66,15 +66,10 @@ jobs:
           done
 
           # Create admin user and generate runner token
+          TOKEN=$(openssl rand -hex 20)
           docker exec forgejo forgejo admin create-user --username test-admin --password test-password --email test@example.com --admin
-          TOKEN=$(docker exec forgejo forgejo actions generate-runner-token)
-          echo "RUNNER_TOKEN=$TOKEN" > /tmp/runner_token.txt
-
-      - name: Get Runner Token
-        shell: wsl-bash {0}
-        run: |
-          TOKEN=$(cat /tmp/runner_token.txt)
-          echo "$TOKEN" > /mnt/c/runner_token.txt
+          docker exec forgejo forgejo forgejo-cli actions register --secret $TOKEN
+          echo "RUNNER_TOKEN=$TOKEN" > /mnt/c/runner_token.txt
 
       - name: Set Runner Token in Windows Environment
         run: |
@@ -129,9 +124,6 @@ jobs:
             labels:
               - windows:host
               - docker:docker://node:20
-          server:
-            url: $env:FORGEJO_URL
-            token: $env:FORGEJO_RUNNER_SECRET
           "@
           Set-Content -Path config.yml -Value $configContent
 
@@ -143,3 +135,4 @@ jobs:
         env:
           FORGEJO_URL: http://localhost:3000
           FORGEJO_RUNNER_SECRET: ${{ env.RUNNER_TOKEN }}
+          FORGEJO_RUNNER_HEX_SECRET: ${{ env.RUNNER_HEX_TOKEN }}
