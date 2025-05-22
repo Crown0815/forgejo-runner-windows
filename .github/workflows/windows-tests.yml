@@ -74,7 +74,12 @@ jobs:
         shell: wsl-bash {0}
         run: |
           TOKEN=$(cat /tmp/runner_token.txt)
-          echo "RUNNER_TOKEN=$TOKEN" >> $GITHUB_ENV
+          echo "$TOKEN" > /mnt/c/runner_token.txt
+
+      - name: Set Runner Token in Windows Environment
+        run: |
+          $token = Get-Content -Path "C:\runner_token.txt"
+          echo "RUNNER_TOKEN=$token" >> $env:GITHUB_ENV
 
       - name: Wait for Forgejo to be accessible from Windows
         run: |
