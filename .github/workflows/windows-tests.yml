@@ -38,6 +38,7 @@ jobs:
         with:
           distribution: Alpine
           wsl-shell-user: root
+          additional-packages: bash
 
       - name: WSL - Install Docker
         shell: wsl-bash {0}
