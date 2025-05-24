@@ -45,7 +45,6 @@ jobs:
         run: |
           apk --update add --no-cache docker curl
           rc-update add docker default
-          service docker start
 
       - name: WSL - Start Forgejo Server
         shell: wsl-bash {0}
