@@ -56,7 +56,7 @@ jobs:
           #fi
 
           # Check Docker service status
-          #docker_status=$(rc-service docker status 2>&1 || echo "not running")
+          docker_status=$(rc-service docker status 2>&1 || echo "not running")
 
           # Start Docker only if it's not already running or starting
           #if echo "$docker_status" | grep -q "not running"; then
