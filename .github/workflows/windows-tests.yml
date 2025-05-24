@@ -51,18 +51,17 @@ jobs:
 
           # Add Docker to the default runlevel and start it
           rc-update add docker default
-          rc-service docker start
+          rc-service docker start || true
 
           # Wait for Docker to be ready
           echo "Waiting for Docker to be ready..."
-          for i in {1..30}; do
-            if docker info > /dev/null 2>&1; then
-              echo "Docker is ready!"
-              break
-            fi
-            echo "Waiting for Docker to be ready... ($i/30)"
+          i=0
+          until docker info > /dev/null 2>&1 || [ $i -eq 30 ]; do
+            i=$((i+1))
+            echo "Waiting... ($i/30)"
             sleep 1
           done
+          [ $i -lt 30 ] && echo "Docker is ready!" || echo "Timed out waiting for Docker"
 
       - name: WSL - Start Forgejo Server
         shell: wsl-bash {0}
@@ -77,14 +76,14 @@ jobs:
             codeberg.org/forgejo/forgejo:11.0-rootless
 
           # Wait for Forgejo to be ready
-          for i in {1..30}; do
-            if curl -s ${{ env.FORGEJO_ROOT_URL }}/api/v1/version > /dev/null; then
-              echo "Forgejo is ready!"
-              break
-            fi
-            echo "Waiting for Forgejo to be ready... ($i/30)"
+          echo "Waiting for Forgejo to be ready..."
+          i=0
+          until curl -s ${{ env.FORGEJO_ROOT_URL }}/api/v1/version > /dev/null || [ $i -eq 30 ]; do
+            i=$((i+1))
+            echo "Waiting... ($i/30)"
             sleep 5
           done
+          [ $i -lt 30 ] && echo "Forgejo is ready!" || { echo "Timed out waiting for Forgejo"; exit 1; }
 
           # Create admin user and generate runner token
           docker exec forgejo forgejo admin create-user --username test-admin --password test-password --email test@example.com --admin
@@ -92,26 +91,24 @@ jobs:
 
       - name: Windows - Wait for Forgejo to be accessible
         run: |
-          $retries = 0
+          Write-Host "Waiting for Forgejo to be accessible from Windows..."
+          $i = 0
           $maxRetries = 30
-          do {
-            try {
-              $response = Invoke-WebRequest -Uri "${{ env.FORGEJO_ROOT_URL }}api/v1/version" -UseBasicParsing
-              if ($response.StatusCode -eq 200) {
-                Write-Host "Forgejo is accessible from Windows!"
-                break
-              }
-            } catch {
-              Write-Host "Waiting for Forgejo to be accessible from Windows... ($retries/$maxRetries)"
-            }
-            $retries++
-            Start-Sleep -Seconds 5
-          } while ($retries -lt $maxRetries)
 
-          if ($retries -ge $maxRetries) {
-            Write-Error "Forgejo did not become accessible in time"
-            exit 1
-          }
+          do {
+            $i++
+            try {
+              $response = Invoke-WebRequest -Uri "${{ env.FORGEJO_ROOT_URL }}api/v1/version" -UseBasicParsing -ErrorAction Stop
+              Write-Host "Forgejo is accessible from Windows!"
+              exit 0
+            } catch {
+              Write-Host "Waiting... ($i/$maxRetries)"
+              Start-Sleep -Seconds 5
+            }
+          } until ($i -ge $maxRetries)
+
+          Write-Error "Forgejo did not become accessible in time"
+          exit 1
 
       - name: Windows - Set up Go
         uses: actions/setup-go@v5
