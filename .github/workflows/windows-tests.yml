@@ -20,6 +20,10 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  FORGEJO_ROOT_URL: 'http://localhost:3000/'
+  FORGEJO_RUNNER_SECRET: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+
 jobs:
   test:
     name: Run Tests on Windows with Linux Forgejo Server
@@ -29,13 +33,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup WSL
+      - name: Setup Windows Subsystem for Linux (WSL)
         uses: Vampire/setup-wsl@v5
 
-      - name: Start Forgejo Server in WSL
+      - name: WSL - Install Docker
         shell: wsl-bash {0}
         run: |
-          # Install Docker in WSL
           apt-get update
           apt-get install -y apt-transport-https ca-certificates curl software-properties-common gnupg
           curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
@@ -44,51 +47,45 @@ jobs:
           apt-get install -y docker.io
           service docker start
 
-          # Start Forgejo container
+      - name: WSL - Start Forgejo Server
+        shell: wsl-bash {0}
+        run: |
           docker run -d --name forgejo \
             -p 3000:3000 \
             -e USER_UID=1000 \
             -e USER_GID=1000 \
             -e FORGEJO__security__INSTALL_LOCK=true \
             -e FORGEJO__server__DOMAIN=localhost \
-            -e FORGEJO__server__ROOT_URL=http://localhost:3000/ \
+            -e FORGEJO__server__ROOT_URL=${{ env.FORGEJO_ROOT_URL }} \
             codeberg.org/forgejo/forgejo:11.0-rootless
 
           # Wait for Forgejo to be ready
-          echo "Waiting for Forgejo to be ready..."
           for i in {1..30}; do
-            if curl -s http://localhost:3000/api/v1/version > /dev/null; then
+            if curl -s ${{ env.FORGEJO_ROOT_URL }}/api/v1/version > /dev/null; then
               echo "Forgejo is ready!"
               break
             fi
-            echo "Waiting... ($i/30)"
+            echo "Waiting for Forgejo to be ready... ($i/30)"
             sleep 5
           done
 
           # Create admin user and generate runner token
-          TOKEN=$(openssl rand -hex 20)
           docker exec forgejo forgejo admin create-user --username test-admin --password test-password --email test@example.com --admin
-          docker exec forgejo forgejo forgejo-cli actions register --secret $TOKEN
-          echo "RUNNER_TOKEN=$TOKEN" > /mnt/c/runner_token.txt
+          docker exec forgejo forgejo forgejo-cli actions register --secret ${{ env.FORGEJO_RUNNER_SECRET }}
 
-      - name: Set Runner Token in Windows Environment
-        run: |
-          $token = Get-Content -Path "C:\runner_token.txt"
-          echo "$token" >> $env:GITHUB_ENV
-
-      - name: Wait for Forgejo to be accessible from Windows
+      - name: Windows - Wait for Forgejo to be accessible
         run: |
           $retries = 0
           $maxRetries = 30
           do {
             try {
-              $response = Invoke-WebRequest -Uri "http://localhost:3000/api/v1/version" -UseBasicParsing
+              $response = Invoke-WebRequest -Uri "${{ env.FORGEJO_ROOT_URL }}api/v1/version" -UseBasicParsing
               if ($response.StatusCode -eq 200) {
                 Write-Host "Forgejo is accessible from Windows!"
                 break
               }
             } catch {
-              Write-Host "Waiting for Forgejo to be accessible from Windows... (Attempt $retries/$maxRetries)"
+              Write-Host "Waiting for Forgejo to be accessible from Windows... ($retries/$maxRetries)"
             }
             $retries++
             Start-Sleep -Seconds 5
@@ -99,28 +96,24 @@ jobs:
             exit 1
           }
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
+      - name: Windows - Set up Go
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version-file: go.mod
 
-      - name: Install dependencies
+      - name: Windows - Install dependencies
         run: go mod download
 
-      - name: Setup Forgejo connection
+      - name: Windows - Setup Forgejo connection
+        env:
+          FORGEJO_URL: ${{ env.FORGEJO_ROOT_URL }}
+          FORGEJO_RUNNER_SECRET: ${{ env.FORGEJO_RUNNER_SECRET }}
         run: |
-          # Set environment variables
-          $env:FORGEJO_URL = "http://localhost:3000"
-          $env:FORGEJO_RUNNER_SECRET = "${{ env.RUNNER_TOKEN }}"
-
           # Create a temporary config file
           $configContent = @"
           log:
             level: debug
           runner:
-            file: .runner
-            capacity: 1
-            timeout: 3h
             labels:
               - windows:host
               - docker:docker://node:20
@@ -130,7 +123,7 @@ jobs:
           # Register the runner
           go run main.go create-runner-file --config config.yml --instance $env:FORGEJO_URL --secret $env:FORGEJO_RUNNER_SECRET --name "windows-test-runner"
 
-      - name: Run tests
+      - name: Windows - Run tests
         run: go test -v ./...
         env:
           FORGEJO_URL: http://localhost:3000
