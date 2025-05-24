@@ -23,6 +23,7 @@ on:
 env:
   FORGEJO_ROOT_URL: 'http://localhost:3000/'
   FORGEJO_RUNNER_SECRET: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+  MAX_WAIT_ITERATIONS: 30
 
 jobs:
   test:
@@ -45,39 +46,17 @@ jobs:
         run: |
           apk --update add --no-cache docker curl
 
-          # Create the OpenRC softlevel file to allow services to run in WSL
-          mkdir -p /run/openrc
-          touch /run/openrc/softlevel
+          # touch /run/openrc/softlevel  # Create the OpenRC softlevel file to allow services to run in WSL
           rc-update add docker default
           openrc default
 
-          #rc-status default
-          # Check if Docker is already in the default runlevel before adding it
-          #if ! rc-status default | grep -q "docker"; then
-          #  echo "Adding Docker service..."
-          #  rc-update add docker default 2>&1 || true
-          #fi
-
-          # Check Docker service status
-          # docker_status=$(rc-service docker status 2>&1 || echo "not running")
-
-          # Start Docker only if it's not already running or starting
-          #if echo "$docker_status" | grep -q "not running"; then
-          #  echo "Starting Docker service..."
-          #  rc-service docker start 2>&1 || true
-          #else
-          #  echo "Docker service status: $docker_status"
-          #fi
-
           # Wait for Docker to be ready
-          echo "Waiting for Docker to be ready..."
           i=0
-          until docker info > /dev/null 2>&1 || [ $i -eq 30 ]; do
-            i=$((i+1))
-            echo "Waiting... ($i/30)"
+          until docker info > /dev/null 2>&1 || (( i == ${{ env.MAX_WAIT_ITERATIONS }} )); do
+            echo "Waiting for Docker to be ready... ($(( ++i ))/${{ env.MAX_WAIT_ITERATIONS }})"
             sleep 1
           done
-          [ $i -lt 30 ] && echo "Docker is ready!" || echo "Timed out waiting for Docker"
+          [ $i -lt ${{ env.MAX_WAIT_ITERATIONS }} ] && echo "Docker is ready!" || echo "Timed out waiting for Docker"
 
       - name: WSL - Start Forgejo Server
         shell: wsl-bash {0}
