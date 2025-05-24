@@ -5,7 +5,7 @@ name: Windows Tests
 # within the Windows runner, allowing network connectivity between the two.
 #
 # The workflow:
-# 1. Sets up WSL with Ubuntu 22.04
+# 1. Sets up WSL with Alpine Linux
 # 2. Installs Docker in WSL
 # 3. Starts a Forgejo server in a Docker container within WSL
 # 4. Creates an admin user and generates a runner token
@@ -35,16 +35,15 @@ jobs:
 
       - name: Windows - Setup Windows Subsystem for Linux (WSL)
         uses: Vampire/setup-wsl@v5
+        with:
+          distribution: Alpine
+          wsl-shell-user: root
 
       - name: WSL - Install Docker
         shell: wsl-bash {0}
         run: |
-          apt-get update
-          apt-get install -y apt-transport-https ca-certificates curl software-properties-common gnupg
-          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu jammy stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-          apt-get update
-          apt-get install -y docker.io
+          apk --update add --no-cache docker curl
+          rc-update add docker default
           service docker start
 
       - name: WSL - Start Forgejo Server
