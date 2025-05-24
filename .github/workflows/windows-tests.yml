@@ -49,40 +49,20 @@ jobs:
           mkdir -p /run/openrc
           touch /run/openrc/softlevel
 
-          # Check if Docker is already in the default runlevel before adding it
-          if ! rc-status default | grep -q "docker"; then
-            rc-update add docker default || true
-          fi
+          # Add Docker to the default runlevel and start it
+          rc-update add docker default
+          rc-service docker start
 
-          # Check Docker service status
-          docker_status=$(rc-service docker status 2>&1 || echo "not running")
-
-          # Start Docker only if it's not already running or starting
-          if echo "$docker_status" | grep -q "not running"; then
-            echo "Starting Docker service..."
-            rc-service docker start || true
-          else
-            echo "Docker service status: $docker_status"
-          fi
-
-          # Wait for Docker to be ready regardless of how it was started
+          # Wait for Docker to be ready
           echo "Waiting for Docker to be ready..."
-          timeout=60
-          for i in $(seq 1 $timeout); do
+          for i in {1..30}; do
             if docker info > /dev/null 2>&1; then
               echo "Docker is ready!"
               break
             fi
-            echo "Waiting for Docker to be ready... ($i/$timeout)"
+            echo "Waiting for Docker to be ready... ($i/30)"
             sleep 1
           done
-
-          # Final check to ensure Docker is working
-          if ! docker info > /dev/null 2>&1; then
-            echo "Docker is still not ready after waiting. Showing service status:"
-            rc-service docker status || true
-            exit 1
-          fi
 
       - name: WSL - Start Forgejo Server
         shell: wsl-bash {0}
@@ -160,6 +140,6 @@ jobs:
       - name: Windows - Run tests
         run: go test -v ./...
         env:
-          FORGEJO_URL: http://localhost:3000
-          FORGEJO_RUNNER_SECRET: ${{ env.RUNNER_TOKEN }}
-          FORGEJO_RUNNER_HEX_SECRET: ${{ env.RUNNER_HEX_TOKEN }}
+          FORGEJO_URL: ${{ env.FORGEJO_ROOT_URL }}
+          FORGEJO_RUNNER_SECRET: ${{ env.FORGEJO_RUNNER_SECRET }}
+          FORGEJO_RUNNER_HEX_SECRET: ${{ env.FORGEJO_RUNNER_SECRET }}
