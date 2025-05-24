@@ -46,7 +46,6 @@ jobs:
         run: |
           apk --update add --no-cache docker curl
 
-          # touch /run/openrc/softlevel  # Create the OpenRC softlevel file to allow services to run in WSL
           rc-update add docker default
           openrc default
 
@@ -56,7 +55,7 @@ jobs:
             echo "Waiting for Docker to be ready... ($(( ++i ))/${{ env.MAX_WAIT_ITERATIONS }})"
             sleep 1
           done
-          [ $i -lt ${{ env.MAX_WAIT_ITERATIONS }} ] && echo "Docker is ready!" || echo "Timed out waiting for Docker"
+          [ $i -lt ${{ env.MAX_WAIT_ITERATIONS }} ] && echo "Docker is ready!" || { echo "Timed out waiting for Docker" ; exit 1; }
 
       - name: WSL - Start Forgejo Server
         shell: wsl-bash {0}
@@ -70,40 +69,16 @@ jobs:
             -e FORGEJO__server__ROOT_URL=${{ env.FORGEJO_ROOT_URL }} \
             codeberg.org/forgejo/forgejo:11.0-rootless
 
-          # Wait for Forgejo to be ready
-          echo "Waiting for Forgejo to be ready..."
           i=0
-          until curl -s ${{ env.FORGEJO_ROOT_URL }}/api/v1/version > /dev/null || [ $i -eq 30 ]; do
-            i=$((i+1))
-            echo "Waiting... ($i/30)"
-            sleep 5
+          until curl -s ${{ env.FORGEJO_ROOT_URL }}/api/v1/version > /dev/null || (( i == ${{ env.MAX_WAIT_ITERATIONS }} )); do
+            echo "Waiting for Forgejo to be ready... ($(( ++i ))/${{ env.MAX_WAIT_ITERATIONS }})"
+            sleep 1
           done
-          [ $i -lt 30 ] && echo "Forgejo is ready!" || { echo "Timed out waiting for Forgejo"; exit 1; }
+          [ $i -lt ${{ env.MAX_WAIT_ITERATIONS }} ] && echo "Forgejo is ready!" || { echo "Timed out waiting for Forgejo" ; exit 1; }
 
           # Create admin user and generate runner token
           docker exec forgejo forgejo admin create-user --username test-admin --password test-password --email test@example.com --admin
           docker exec forgejo forgejo forgejo-cli actions register --secret ${{ env.FORGEJO_RUNNER_SECRET }}
-
-      - name: Windows - Wait for Forgejo to be accessible
-        run: |
-          Write-Host "Waiting for Forgejo to be accessible from Windows..."
-          $i = 0
-          $maxRetries = 30
-
-          do {
-            $i++
-            try {
-              $response = Invoke-WebRequest -Uri "${{ env.FORGEJO_ROOT_URL }}api/v1/version" -UseBasicParsing -ErrorAction Stop
-              Write-Host "Forgejo is accessible from Windows!"
-              exit 0
-            } catch {
-              Write-Host "Waiting... ($i/$maxRetries)"
-              Start-Sleep -Seconds 5
-            }
-          } until ($i -ge $maxRetries)
-
-          Write-Error "Forgejo did not become accessible in time"
-          exit 1
 
       - name: Windows - Set up Go
         uses: actions/setup-go@v5
@@ -113,10 +88,9 @@ jobs:
       - name: Windows - Install dependencies
         run: go mod download
 
-      - name: Windows - Setup Forgejo connection
+      - name: Windows - Connect to Forgejo server
         run: |
-          # Create a temporary config file
-          $configContent = @"
+          $configFileContent = @"
           log:
             level: debug
           runner:
@@ -124,10 +98,10 @@ jobs:
               - windows:host
               - docker:docker://node:20
           "@
-          Set-Content -Path config.yml -Value $configContent
+          Set-Content -Path temporaryConfig.yml -Value $configFileContent
 
           # Register the runner
-          go run main.go create-runner-file --config config.yml --instance ${{ env.FORGEJO_ROOT_URL }} --secret ${{ env.FORGEJO_RUNNER_SECRET }} --name "windows-test-runner"
+          go run main.go create-runner-file --config temporaryConfig.yml --instance ${{ env.FORGEJO_ROOT_URL }} --secret ${{ env.FORGEJO_RUNNER_SECRET }} --name "windows-test-runner"
 
       - name: Windows - Run tests
         run: go test -v ./...
