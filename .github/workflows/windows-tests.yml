@@ -46,6 +46,24 @@ jobs:
           apk --update add --no-cache docker curl
           rc-update add docker default
 
+          # Check if Docker is already running, if not start it and wait for it to be ready
+          if ! pgrep -x dockerd > /dev/null; then
+            service docker start
+            # Wait for Docker to be ready
+            echo "Waiting for Docker to be ready..."
+            timeout=30
+            for i in $(seq 1 $timeout); do
+              if docker info > /dev/null 2>&1; then
+                echo "Docker is ready!"
+                break
+              fi
+              echo "Waiting for Docker to be ready... ($i/$timeout)"
+              sleep 1
+            done
+          else
+            echo "Docker is ready!"
+          fi
+
       - name: WSL - Start Forgejo Server
         shell: wsl-bash {0}
         run: |
