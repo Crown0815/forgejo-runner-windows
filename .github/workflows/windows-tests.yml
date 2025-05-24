@@ -71,6 +71,7 @@ jobs:
             -e FORGEJO__server__ROOT_URL=${{ env.FORGEJO_ROOT_URL }} \
             codeberg.org/forgejo/forgejo:11.0-rootless
 
+          sleep 10 # matches the sleep 10 in the bootstrap of the Forgejo instance
           i=0
           until curl -s ${{ env.FORGEJO_ROOT_URL }}/api/v1/version > /dev/null || (( i == ${{ env.MAX_WAIT_ITERATIONS }} )); do
             echo "Waiting for Forgejo to be ready... ($(( ++i ))/${{ env.MAX_WAIT_ITERATIONS }})"
