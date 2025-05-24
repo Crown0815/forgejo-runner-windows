@@ -71,7 +71,19 @@ jobs:
             -e FORGEJO__server__ROOT_URL=${{ env.FORGEJO_ROOT_URL }} \
             codeberg.org/forgejo/forgejo:11.0-rootless
 
-          sleep 10 # matches the sleep 10 in the bootstrap of the Forgejo instance
+      - name: Windows - Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Windows - Install dependencies
+        run: go mod download
+
+      - name: WSL - Register Runner on Forgejo Server
+        # Starting the Forgejo server takes some time.
+        # That time used to install go.
+        shell: wsl-bash {0}
+        run: |
           i=0
           until curl -s ${{ env.FORGEJO_ROOT_URL }}/api/v1/version > /dev/null || (( i == ${{ env.MAX_WAIT_ITERATIONS }} )); do
             echo "Waiting for Forgejo to be ready... ($(( ++i ))/${{ env.MAX_WAIT_ITERATIONS }})"
@@ -82,14 +94,6 @@ jobs:
           # Create admin user and generate runner token
           docker exec forgejo forgejo admin user create --admin --username ${{ env.FORGEJO_ADMIN_USER }} --password ${{ env.FORGEJO_ADMIN_PASSWORD }} --email root@example.com
           docker exec forgejo forgejo forgejo-cli actions register --labels docker --name therunner --secret ${{ env.FORGEJO_RUNNER_SECRET }}
-
-      - name: Windows - Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-
-      - name: Windows - Install dependencies
-        run: go mod download
 
       - name: Windows - Connect to Forgejo server
         run: |
