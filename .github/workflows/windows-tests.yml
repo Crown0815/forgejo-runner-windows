@@ -50,21 +50,21 @@ jobs:
           touch /run/openrc/softlevel
 
           # Check if Docker is already in the default runlevel before adding it
-          if ! rc-status default | grep -q "docker"; then
+          #if ! rc-status default | grep -q "docker"; then
             echo "Adding Docker service..."
             rc-update add docker default 2>&1 || true
-          fi
+          #fi
 
           # Check Docker service status
-          docker_status=$(rc-service docker status 2>&1 || echo "not running")
+          #docker_status=$(rc-service docker status 2>&1 || echo "not running")
 
           # Start Docker only if it's not already running or starting
-          if echo "$docker_status" | grep -q "not running"; then
+          #if echo "$docker_status" | grep -q "not running"; then
             echo "Starting Docker service..."
             rc-service docker start 2>&1 || true
-          else
-            echo "Docker service status: $docker_status"
-          fi
+          #else
+          #  echo "Docker service status: $docker_status"
+          #fi
 
           # Wait for Docker to be ready
           echo "Waiting for Docker to be ready..."
