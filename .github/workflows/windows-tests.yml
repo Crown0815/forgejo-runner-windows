@@ -22,6 +22,8 @@ on:
 
 env:
   FORGEJO_ROOT_URL: 'http://localhost:3000/'
+  FORGEJO_ADMIN_USER: 'root'
+  FORGEJO_ADMIN_PASSWORD: 'admin1234'
   FORGEJO_RUNNER_SECRET: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
   MAX_WAIT_ITERATIONS: 30
 
@@ -77,8 +79,8 @@ jobs:
           [ $i -lt ${{ env.MAX_WAIT_ITERATIONS }} ] && echo "Forgejo is ready!" || { echo "Timed out waiting for Forgejo" ; exit 1; }
 
           # Create admin user and generate runner token
-          docker exec forgejo forgejo admin create-user --username test-admin --password test-password --email test@example.com --admin
-          docker exec forgejo forgejo forgejo-cli actions register --secret ${{ env.FORGEJO_RUNNER_SECRET }}
+          docker exec forgejo forgejo admin user create --admin --username ${{ env.FORGEJO_ADMIN_USER }} --password ${{ env.FORGEJO_ADMIN_PASSWORD }} --email root@example.com
+          docker exec forgejo forgejo forgejo-cli actions register --labels docker --name therunner --secret ${{ env.FORGEJO_RUNNER_SECRET }}
 
       - name: Windows - Set up Go
         uses: actions/setup-go@v5
