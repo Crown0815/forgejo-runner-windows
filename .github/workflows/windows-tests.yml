@@ -49,9 +49,21 @@ jobs:
           mkdir -p /run/openrc
           touch /run/openrc/softlevel
 
-          # Add Docker to the default runlevel and start it
-          rc-update add docker default
-          rc-service docker start || true
+          # Check if Docker is already in the default runlevel before adding it
+          if ! rc-status default | grep -q "docker"; then
+            rc-update add docker default || true
+          fi
+
+          # Check Docker service status
+          docker_status=$(rc-service docker status 2>&1 || echo "not running")
+
+          # Start Docker only if it's not already running or starting
+          if echo "$docker_status" | grep -q "not running"; then
+            echo "Starting Docker service..."
+            rc-service docker start || true
+          else
+            echo "Docker service status: $docker_status"
+          fi
 
           # Wait for Docker to be ready
           echo "Waiting for Docker to be ready..."
