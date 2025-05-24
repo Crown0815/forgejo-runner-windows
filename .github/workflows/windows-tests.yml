@@ -116,3 +116,7 @@ jobs:
           FORGEJO_URL: ${{ env.FORGEJO_ROOT_URL }}
           FORGEJO_RUNNER_SECRET: ${{ env.FORGEJO_RUNNER_SECRET }}
           FORGEJO_RUNNER_HEX_SECRET: ${{ env.FORGEJO_RUNNER_SECRET }}
+
+
+      - name: Windows - Make tests
+        run: make FORGEJO_URL=${{ env.FORGEJO_ROOT_URL }} test
