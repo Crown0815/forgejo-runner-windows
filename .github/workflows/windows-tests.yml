@@ -45,6 +45,10 @@ jobs:
         run: |
           apk --update add --no-cache docker curl
 
+          # Create the OpenRC softlevel file to allow services to run in WSL
+          mkdir -p /run/openrc
+          touch /run/openrc/softlevel
+
           # Check if Docker is already in the default runlevel before adding it
           if ! rc-status default | grep -q "docker"; then
             rc-update add docker default || true
