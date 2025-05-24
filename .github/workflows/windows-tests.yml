@@ -44,24 +44,40 @@ jobs:
         shell: wsl-bash {0}
         run: |
           apk --update add --no-cache docker curl
-          rc-update add docker default
 
-          # Check if Docker is already running, if not start it and wait for it to be ready
-          if ! pgrep -x dockerd > /dev/null; then
-            service docker start
-            # Wait for Docker to be ready
-            echo "Waiting for Docker to be ready..."
-            timeout=30
-            for i in $(seq 1 $timeout); do
-              if docker info > /dev/null 2>&1; then
-                echo "Docker is ready!"
-                break
-              fi
-              echo "Waiting for Docker to be ready... ($i/$timeout)"
-              sleep 1
-            done
+          # Check if Docker is already in the default runlevel before adding it
+          if ! rc-status default | grep -q "docker"; then
+            rc-update add docker default || true
+          fi
+
+          # Check Docker service status
+          docker_status=$(rc-service docker status 2>&1 || echo "not running")
+
+          # Start Docker only if it's not already running or starting
+          if echo "$docker_status" | grep -q "not running"; then
+            echo "Starting Docker service..."
+            rc-service docker start || true
           else
-            echo "Docker is ready!"
+            echo "Docker service status: $docker_status"
+          fi
+
+          # Wait for Docker to be ready regardless of how it was started
+          echo "Waiting for Docker to be ready..."
+          timeout=60
+          for i in $(seq 1 $timeout); do
+            if docker info > /dev/null 2>&1; then
+              echo "Docker is ready!"
+              break
+            fi
+            echo "Waiting for Docker to be ready... ($i/$timeout)"
+            sleep 1
+          done
+
+          # Final check to ensure Docker is working
+          if ! docker info > /dev/null 2>&1; then
+            echo "Docker is still not ready after waiting. Showing service status:"
+            rc-service docker status || true
+            exit 1
           fi
 
       - name: WSL - Start Forgejo Server
