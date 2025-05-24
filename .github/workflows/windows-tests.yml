@@ -1,18 +1,8 @@
 name: Windows Tests
 
 # This workflow runs tests on Windows with a Forgejo server running on Linux.
-# It uses Windows Subsystem for Linux (WSL) to run the Forgejo server in a Docker container
-# within the Windows runner, allowing network connectivity between the two.
-#
-# The workflow:
-# 1. Sets up WSL with Alpine Linux
-# 2. Installs Docker in WSL
-# 3. Starts a Forgejo server in a Docker container within WSL
-# 4. Creates an admin user and generates a runner token
-# 5. Passes the runner token to the Windows environment
-# 6. Waits for the Forgejo server to be accessible from Windows
-# 7. Sets up the Forgejo connection and registers the runner
-# 8. Runs the tests on Windows
+# It uses Windows Subsystem for Linux (WSL) to run the Forgejo server in a
+# Docker container within the Windows runner.
 
 on:
   push:
