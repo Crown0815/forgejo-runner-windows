@@ -105,9 +105,6 @@ jobs:
         run: go mod download
 
       - name: Windows - Setup Forgejo connection
-        env:
-          FORGEJO_URL: ${{ env.FORGEJO_ROOT_URL }}
-          FORGEJO_RUNNER_SECRET: ${{ env.FORGEJO_RUNNER_SECRET }}
         run: |
           # Create a temporary config file
           $configContent = @"
@@ -121,7 +118,7 @@ jobs:
           Set-Content -Path config.yml -Value $configContent
 
           # Register the runner
-          go run main.go create-runner-file --config config.yml --instance $env:FORGEJO_URL --secret $env:FORGEJO_RUNNER_SECRET --name "windows-test-runner"
+          go run main.go create-runner-file --config config.yml --instance ${{ env.FORGEJO_ROOT_URL }} --secret ${{ env.FORGEJO_RUNNER_SECRET }} --name "windows-test-runner"
 
       - name: Windows - Run tests
         run: go test -v ./...
