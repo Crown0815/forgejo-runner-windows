@@ -51,6 +51,7 @@ jobs:
 
           # Check if Docker is already in the default runlevel before adding it
           if ! rc-status default | grep -q "docker"; then
+            echo "Adding Docker service..."
             rc-update add docker default || true
           fi
 
