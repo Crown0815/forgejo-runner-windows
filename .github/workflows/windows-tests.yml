@@ -48,12 +48,14 @@ jobs:
           # Create the OpenRC softlevel file to allow services to run in WSL
           mkdir -p /run/openrc
           touch /run/openrc/softlevel
+          rc-update add docker default
+          openrc default
 
-          rc-status default
+          #rc-status default
           # Check if Docker is already in the default runlevel before adding it
           #if ! rc-status default | grep -q "docker"; then
-            echo "Adding Docker service..."
-            rc-update add docker default 2>&1 || true
+          #  echo "Adding Docker service..."
+          #  rc-update add docker default 2>&1 || true
           #fi
 
           # Check Docker service status
@@ -61,8 +63,8 @@ jobs:
 
           # Start Docker only if it's not already running or starting
           #if echo "$docker_status" | grep -q "not running"; then
-            echo "Starting Docker service..."
-            rc-service docker start 2>&1 || true
+          #  echo "Starting Docker service..."
+          #  rc-service docker start 2>&1 || true
           #else
           #  echo "Docker service status: $docker_status"
           #fi
